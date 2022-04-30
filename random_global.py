@@ -470,7 +470,7 @@ def main():
                 )
 
             # Sample long-term goal from global policy
-            g_value, g_action, g_action_log_prob, g_rec_states = \
+            # g_value, g_action, g_action_log_prob, g_rec_states = \
             #     g_policy.act(
             #         g_rollouts.obs[g_step + 1],
             #         g_rollouts.rec_states[g_step + 1],
