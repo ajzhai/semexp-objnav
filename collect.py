@@ -349,8 +349,8 @@ def main():
     success_per_category = defaultdict(list)
     
     saved = 0
-    full_map_seq = torch.zeros(num_scenes, args.max_episode_length // args.num_local_steps - 1, nc, full_w, full_h).float().to(device)
-    local_map_seq = torch.zeros(num_scenes, args.max_episode_length // args.num_local_steps - 1, nc, local_w, local_h).float().to(device)
+    full_map_seq = torch.zeros(num_scenes, args.max_episode_length // args.num_local_steps , nc, full_w, full_h).float().to(device)
+    local_map_seq = torch.zeros(num_scenes, args.max_episode_length // args.num_local_steps , nc, local_w, local_h).float().to(device)
     
     for step in range(args.num_training_frames // args.num_processes + 1):
         if finished.sum() == args.num_processes:
