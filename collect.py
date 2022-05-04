@@ -349,8 +349,9 @@ def main():
     success_per_category = defaultdict(list)
     
     saved = 0
-    full_map_seq = torch.zeros(num_scenes, args.max_episode_length // args.num_local_steps , nc, full_w, full_h).float().to(device)
-    local_map_seq = torch.zeros(num_scenes, args.max_episode_length // args.num_local_steps , nc, local_w, local_h).float().to(device)
+    #args.max_episode_length // args.num_local_steps
+    full_map_seq = torch.zeros(num_scenes,  5, nc, full_w, full_h).float().to(device)
+    local_map_seq = torch.zeros(num_scenes, 5, nc, local_w, local_h).float().to(device)
     
     for step in range(args.num_training_frames // args.num_processes + 1):
         if finished.sum() == args.num_processes:
@@ -451,8 +452,14 @@ def main():
                 local_pose[e] = full_pose[e] - \
                     torch.from_numpy(origins[e]).to(device).float()
                 
-                full_map_seq[e][(step % 500) // args.num_local_steps] = full_map[e]
-                local_map_seq[e][(step % 500) // args.num_local_steps] = local_map[e]
+                if step == 499:
+                    full_map_seq[e][-1] = full_map[e]
+                    local_map_seq[e][-1] = local_map[e]
+                else:
+                    seq_i = (step % 500) // args.num_local_steps
+                    if seq_i < 4:
+                        full_map_seq[e][seq_i] = full_map[e]
+                        local_map_seq[e][seq_i] = local_map[e]
 
             locs = local_pose.cpu().numpy()
             for e in range(num_scenes):
