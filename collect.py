@@ -452,7 +452,7 @@ def main():
                 local_pose[e] = full_pose[e] - \
                     torch.from_numpy(origins[e]).to(device).float()
                 
-                if step == 499:
+                if step % 500 == 499:
                     full_map_seq[e][-1] = full_map[e]
                     local_map_seq[e][-1] = local_map[e]
                 else:
