@@ -54,7 +54,7 @@ def main():
     C = 16
     imsize=128
     pred_model = BasicFCN(C + 4, C, imsize=imsize).to(device)
-    pred_model.load_state_dict('weights/res128_ep200.pth')
+    pred_model.load_state_dict(torch.load('weights/res128_ep200.pth', map_location=device))
     pred_model.eval()
     size_tf = transforms.Resize((imsize, imsize))
     
@@ -496,7 +496,7 @@ def main():
             with torch.no_grad():
                 pred_input = full_map[:, :, 48:-48, 48:-48]
                 pred_input[:, 1] = (pred_input[:, 1] > 0.2).float()
-                pred_input = size_tf(pred_input)
+                pred_input = nn.functional.interpolate(pred_input, size=(imsize, imsize), mode='bilinear')
                 obj_preds = pred_model(pred_input)[:, infos[e]['goal_cat_id'], :, :]
             max_idxs = [(obj_pred==torch.max(obj_pred)).nonzero()[0]+48 for obj_pred in obj_preds]  # wrt full map
             max_idxs = [[int(max_idx[0] - lmb[e, 0]), int(max_idx[1] - lmb[e, 2])] for e, max_idx in enumerate(max_idxs)]  # wrt local map
