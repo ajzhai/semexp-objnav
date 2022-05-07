@@ -7,11 +7,13 @@ import gym
 import torch.nn as nn
 import torch
 import numpy as np
+import torchvision.transforms as transforms
 
 from model import RL_Policy, Semantic_Mapping
 from utils.storage import GlobalRolloutStorage
 from envs import make_vec_envs
 from arguments import get_args
+from train import BasicFCN
 import algo
 
 os.environ["OMP_NUM_THREADS"] = "1"
@@ -46,7 +48,16 @@ def main():
     num_scenes = args.num_processes
     num_episodes = int(args.num_eval_episodes)
     device = args.device = torch.device("cuda:0" if args.cuda else "cpu")
-
+    
+    
+    ###############################################################################
+    C = 16
+    imsize=128
+    pred_model = BasicFCN(C + 4, C, imsize=imsize).to(device)
+    pred_model.load_state_dict('weights/res128_ep200.pth')
+    pred_model.eval()
+    size_tf = transforms.Resize((imsize, imsize))
+    
     g_masks = torch.ones(num_scenes).float().to(device)
 
     best_g_reward = -np.inf
@@ -479,13 +490,28 @@ def main():
             #         deterministic=False
             #     )
             # cpu_actions = nn.Sigmoid()(g_action).cpu().numpy()
-            cpu_actions = [[np.cos(ang) *0.25 + 0.5, np.sin(ang) *0.25 + 0.5] for ang in np.random.uniform(low=-np.pi, high=np.pi, size=num_scenes) ]
-            global_goals = [[int(action[0] * local_w),
-                             int(action[1] * local_h)]
-                            for action in cpu_actions]
-            global_goals = [[min(x, int(local_w - 1)),
-                             min(y, int(local_h - 1))]
-                            for x, y in global_goals]
+            
+            ###############################################################################################
+            
+            with torch.no_grad():
+                pred_input = full_map[:, :, 48:-48, 48:-48]
+                pred_input[:, 1] = (pred_input[:, 1] > 0.2).float()
+                pred_input = size_tf(pred_input)
+                obj_preds = pred_model(pred_input)[:, infos[e]['goal_cat_id'], :, :]
+            max_idxs = [(obj_pred==torch.max(obj_pred)).nonzero()[0]+48 for obj_pred in obj_preds]  # wrt full map
+            max_idxs = [[int(max_idx[0] - lmb[e, 0]), int(max_idx[1] - lmb[e, 2])] for e, max_idx in enumerate(max_idxs)]  # wrt local map
+            global_goals = np.array(max_idxs, dtype=int)
+            global_goals[:, 0] = np.clip(global_goals[:, 0], 0, local_w-1) 
+            global_goals[:, 1] = np.clip(global_goals[:, 1], 0, local_h-1) 
+            
+            
+            # cpu_actions = [[np.cos(ang) *0.25 + 0.5, np.sin(ang) *0.25 + 0.5] for ang in np.random.uniform(low=-np.pi, high=np.pi, size=num_scenes) ]
+            # global_goals = [[int(action[0] * local_w),
+            #                  int(action[1] * local_h)]
+            #                 for action in cpu_actions]
+            # global_goals = [[min(x, int(local_w - 1)),
+            #                  min(y, int(local_h - 1))]
+            #                 for x, y in global_goals]
 
             g_reward = 0
             g_masks = torch.ones(num_scenes).float().to(device)
