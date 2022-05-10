@@ -5,3 +5,5 @@ The key new files are:
 * `pred_global.py`: for evaluating navigation performance of HPP in Habitat.
 * `train.py`: for training PSOP model.
 * `eval.py`: for evaluating PSOP model.
+
+A teaser video for the project can be found here: https://drive.google.com/file/d/1HZBhbvNRM3-mDtw5VD3mRz91-Q0pX824/view?usp=sharing
